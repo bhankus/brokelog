@@ -1,0 +1,244 @@
+openapi: "3.1.0"
+
+info:
+  title: brokelog
+  version: "0.1.0"
+  description: |
+    REST API for ingesting CSV banking transaction exports and storing them in a
+    normalized format. Supports multiple bank formats via a pluggable parser system.
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+
+paths:
+  /api/v1/transactions:
+    post:
+      summary: Create transactions
+      operationId: createTransactions
+      description: |
+        Creates one or more transactions. Accepts two content types:
+
+        - **multipart/form-data**: Upload a bank CSV file. Parses the CSV using the
+          specified bank parser and bulk-inserts all rows. Returns an `UploadResult`.
+        - **application/json**: Create a single transaction from a JSON body.
+          Returns a `TransactionRead`.
+      tags:
+        - transactions
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - bank
+                - account
+                - owner
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV file exported from a bank
+                bank:
+                  type: string
+                  enum:
+                    - chase
+                  description: Bank identifier to select the correct CSV parser
+                account:
+                  type: string
+                  description: Account label (e.g. "Chase Checking 1234")
+                owner:
+                  type: string
+                  description: Account owner identifier (e.g. "alice")
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionCreate"
+      responses:
+        "201":
+          description: Transactions created successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/UploadResult"
+                  - $ref: "#/components/schemas/TransactionRead"
+        "400":
+          description: Unknown bank, invalid file type, or CSV parse error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "422":
+          description: Validation error (missing or invalid fields)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+
+    get:
+      summary: List transactions
+      operationId: listTransactions
+      tags:
+        - transactions
+      parameters:
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 1000
+        - name: account
+          in: query
+          schema:
+            type: string
+          description: Filter by account name
+        - name: owner
+          in: query
+          schema:
+            type: string
+          description: Filter by owner
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransactionRead"
+
+  /api/v1/transactions/{transaction_id}:
+    get:
+      summary: Get a transaction by ID
+      operationId: getTransaction
+      tags:
+        - transactions
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Transaction found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionRead"
+        "404":
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+
+    delete:
+      summary: Delete a transaction
+      operationId: deleteTransaction
+      tags:
+        - transactions
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted successfully
+        "404":
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+
+components:
+  schemas:
+    TransactionCreate:
+      type: object
+      required:
+        - transaction_date
+        - amount
+        - description
+        - category
+        - type
+        - account
+        - owner
+      properties:
+        transaction_date:
+          type: string
+          format: date
+          example: "2024-01-15"
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          example: 45.99
+        description:
+          type: string
+          example: "AMAZON.COM"
+        category:
+          type: string
+          example: "Shopping"
+        type:
+          type: string
+          enum:
+            - debit
+            - credit
+        account:
+          type: string
+          example: "Chase Checking 1234"
+        owner:
+          type: string
+          example: "alice"
+
+    TransactionRead:
+      allOf:
+        - $ref: "#/components/schemas/TransactionCreate"
+        - type: object
+          required:
+            - id
+            - created_at
+          properties:
+            id:
+              type: integer
+              example: 1
+            created_at:
+              type: string
+              format: date-time
+
+    UploadResult:
+      type: object
+      required:
+        - count
+        - transaction_ids
+      properties:
+        count:
+          type: integer
+          description: Number of transactions imported
+          example: 3
+        transaction_ids:
+          type: array
+          items:
+            type: integer
+          example: [1, 2, 3]
+
+    ErrorDetail:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          example: "Unknown bank 'foobank'. Supported banks: ['chase']"
