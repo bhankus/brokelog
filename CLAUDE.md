@@ -41,8 +41,8 @@ The app is a FastAPI REST API that ingests bank CSV exports, normalizes them thr
 
 **"N/A" convention**: All `TransactionCreate` fields are required with no defaults. When a parser cannot populate a string field from CSV data, it substitutes `"N/A"` using the `BaseParser` helpers — the responsibility lives in the parser layer, not the Pydantic model.
 
-**Amounts are always positive**: `amount` is stored as an absolute value; the `type` field (`"debit"` or `"credit"`) conveys direction. The `@field_validator("amount")` enforces `> 0`.
+**Amount sign convention**: `amount` preserves the sign from the source CSV — negative for outflows (debits/purchases), positive for inflows (credits/payments). The `type` field (`"debit"` or `"credit"`) is set independently from the CSV's transaction type column. The `@field_validator("amount")` rejects zero but allows negative values.
 
 **Test isolation**: Tests use an in-memory SQLite engine (session-scoped) with a rollback-per-test pattern — each test gets a transaction that rolls back rather than a fresh DB, keeping tests fast. The `client` fixture overrides the `get_db` FastAPI dependency via `app.dependency_overrides`.
 
-**Chase CSV format**: `Transaction Date,Post Date,Description,Category,Type,Amount,Memo` — `Type` values `Sale`→`debit`, `Payment`/`Return`→`credit`. Date format `%m/%d/%Y`. Amounts may be negative in the CSV; `_safe_float` takes the absolute value.
+**Chase CSV format**: `Transaction Date,Post Date,Description,Category,Type,Amount,Memo` — `Type` values `Sale`→`debit`, `Payment`/`Return`→`credit`. Date format `%m/%d/%Y`. Amounts in the CSV are negative for purchases and positive for payments; `_safe_float` preserves the sign.
