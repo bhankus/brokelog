@@ -46,8 +46,8 @@ class TransactionBase(BaseModel):
     @classmethod
     def validate_amount(cls, v: object) -> float:
         result = float(str(v))
-        if result <= 0:
-            raise ValueError("amount must be a positive number")
+        if result == 0:
+            raise ValueError("amount must be non-zero")
         return result
 
 

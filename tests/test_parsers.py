@@ -32,10 +32,14 @@ class TestChaseParser:
         assert len(credits) == 1
         assert credits[0].description == "PAYROLL"
 
-    def test_amounts_are_positive(self):
+    def test_amount_signs_match_type(self):
         parser = ChaseParser()
         result = parser.parse(_df(CHASE_CSV_CONTENT), account="Chase Checking", owner="alice")
-        assert all(t.amount > 0 for t in result)
+        for t in result:
+            if t.type == "debit":
+                assert t.amount < 0
+            else:
+                assert t.amount > 0
 
     def test_blank_category_becomes_na(self):
         parser = ChaseParser()

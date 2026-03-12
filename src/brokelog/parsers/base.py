@@ -17,7 +17,7 @@ class BaseParser:
             raise ValueError(f"Cannot convert null/NaN to float: {val!r}")
         # Replace unicode minus (U+2212) with ASCII minus, strip currency symbols
         cleaned = str(val).replace("\u2212", "-").replace("$", "").replace(",", "").strip()
-        return abs(float(cleaned))
+        return float(cleaned)
 
     def _safe_date(self, val: Any, fmt: str | None = None) -> date:
         if pd.isna(val):
