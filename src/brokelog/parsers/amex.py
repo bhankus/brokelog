@@ -21,7 +21,7 @@ class AmexParser(BaseParser):
 
             transactions.append(
                 TransactionCreate(
-                    transaction_date=self._safe_date(row["Date"], fmt="%m/%d/%Y"),
+                    transaction_date=self._safe_date(row["Date"], fmt="%m/%d/%y"),
                     amount=amount,
                     description=self._normalize_description(row["Description"]),
                     category=self._safe_str(row.get("Category")),
