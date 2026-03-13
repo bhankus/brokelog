@@ -46,3 +46,5 @@ The app is a FastAPI REST API that ingests bank CSV exports, normalizes them thr
 **Test isolation**: Tests use an in-memory SQLite engine (session-scoped) with a rollback-per-test pattern — each test gets a transaction that rolls back rather than a fresh DB, keeping tests fast. The `client` fixture overrides the `get_db` FastAPI dependency via `app.dependency_overrides`.
 
 **Chase CSV format**: `Transaction Date,Post Date,Description,Category,Type,Amount,Memo` — `Type` values `Sale`→`debit`, `Payment`/`Return`→`credit`. Date format `%m/%d/%Y`. Amounts in the CSV are negative for purchases and positive for payments; `_safe_float` preserves the sign.
+
+**Amex CSV format**: `Date,Description,Amount,Extended Details,Appears On Your Statement As,Address,City/State,Zip Code,Country,Reference,Category` — no explicit type column; type is inferred from sign after negation. Date format `%m/%d/%Y`. Amex encodes purchases as positive and payments as negative; the parser negates amounts to match the system convention (negative = debit, positive = credit).

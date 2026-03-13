@@ -27,6 +27,18 @@ CHASE_CSV_EMPTY = """\
 Transaction Date,Post Date,Description,Category,Type,Amount,Memo
 """
 
+AMEX_CSV_CONTENT = """\
+Date,Description,Amount,Extended Details,Appears On Your Statement As,Address,City/State,Zip Code,Country,Reference,Category
+01/15/2024,AMAZON.COM,45.99,,,,,,,,Shopping
+01/16/2024,WHOLE FOODS,82.14,,,,,,,,Groceries
+01/20/2024,PAYMENT - THANK YOU,-500.00,,,,,,,,Payments
+"""
+
+AMEX_CSV_MISSING_COLUMN = """\
+Description,Amount
+AMAZON.COM,45.99
+"""
+
 # ---------------------------------------------------------------------------
 # Database fixtures
 # ---------------------------------------------------------------------------
