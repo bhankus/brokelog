@@ -5,8 +5,9 @@ import pytest
 from fastapi import HTTPException
 
 from brokelog.parsers import SUPPORTED_BANKS, get_parser
+from brokelog.parsers.amex import AmexParser
 from brokelog.parsers.chase import ChaseParser
-from tests.conftest import CHASE_CSV_CONTENT, CHASE_CSV_MISSING_COLUMN
+from tests.conftest import AMEX_CSV_CONTENT, AMEX_CSV_MISSING_COLUMN, CHASE_CSV_CONTENT, CHASE_CSV_MISSING_COLUMN
 
 
 def _df(csv: str) -> pd.DataFrame:
@@ -82,3 +83,58 @@ class TestParserRegistry:
 
     def test_supported_banks_contains_chase(self):
         assert "chase" in SUPPORTED_BANKS
+
+    def test_supported_banks_contains_amex(self):
+        assert "amex" in SUPPORTED_BANKS
+
+
+class TestAmexParser:
+    def test_parse_basic(self):
+        parser = AmexParser()
+        result = parser.parse(_df(AMEX_CSV_CONTENT), account="Amex Gold", owner="alice")
+        assert len(result) == 3
+
+    def test_purchase_maps_to_debit(self):
+        parser = AmexParser()
+        result = parser.parse(_df(AMEX_CSV_CONTENT), account="Amex Gold", owner="alice")
+        assert len([t for t in result if t.type == "debit"]) == 2
+
+    def test_payment_maps_to_credit(self):
+        parser = AmexParser()
+        result = parser.parse(_df(AMEX_CSV_CONTENT), account="Amex Gold", owner="alice")
+        credits = [t for t in result if t.type == "credit"]
+        assert len(credits) == 1
+        assert credits[0].description == "PAYMENT - THANK YOU"
+
+    def test_amount_signs_match_type(self):
+        parser = AmexParser()
+        result = parser.parse(_df(AMEX_CSV_CONTENT), account="Amex Gold", owner="alice")
+        for t in result:
+            if t.type == "debit":
+                assert t.amount < 0
+            else:
+                assert t.amount > 0
+
+    def test_category_mapped(self):
+        parser = AmexParser()
+        result = parser.parse(_df(AMEX_CSV_CONTENT), account="Amex Gold", owner="alice")
+        assert result[0].category == "Shopping"
+        assert result[1].category == "Groceries"
+
+    def test_account_and_owner_injected(self):
+        parser = AmexParser()
+        result = parser.parse(_df(AMEX_CSV_CONTENT), account="My Amex", owner="bob")
+        assert all(t.account == "My Amex" for t in result)
+        assert all(t.owner == "bob" for t in result)
+
+    def test_missing_required_column_raises(self):
+        parser = AmexParser()
+        with pytest.raises(ValueError, match="missing required columns"):
+            parser.parse(_df(AMEX_CSV_MISSING_COLUMN), account="x", owner="y")
+
+    def test_date_parsed_correctly(self):
+        from datetime import date
+
+        parser = AmexParser()
+        result = parser.parse(_df(AMEX_CSV_CONTENT), account="x", owner="y")
+        assert result[0].transaction_date == date(2024, 1, 15)
