@@ -39,6 +39,26 @@ Description,Amount
 AMAZON.COM,45.99
 """
 
+BARCLAYS_CSV_CONTENT = """\
+Barclays Bank Delaware
+Account Number: XXXXXXXXXXXX1234
+Account Balance as of March 17 2026:    $12.34
+
+Transaction Date,Description,Category,Amount
+03/11/2026,"Audible*A25PO5B12","DEBIT",-14.95
+03/03/2026,"FAVORITE RESTAURANT","DEBIT",-99.95
+02/25/2026,"PAYMENT RECV'D CHECKFREE","CREDIT",100.50
+"""
+
+BARCLAYS_CSV_MISSING_COLUMN = """\
+Barclays Bank Delaware
+Account Number: XXXXXXXXXXXX1234
+Account Balance as of March 17 2026:    $12.34
+
+Description,Amount
+AUDIBLE,-14.95
+"""
+
 # ---------------------------------------------------------------------------
 # Database fixtures
 # ---------------------------------------------------------------------------

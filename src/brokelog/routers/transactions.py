@@ -23,12 +23,11 @@ async def _handle_csv_upload(
         raise HTTPException(status_code=400, detail="Uploaded file must be a CSV (.csv)")
 
     content = (await file.read()).decode("utf-8")
+    parser = get_parser(bank)
     try:
-        df = pd.read_csv(io.StringIO(content))
+        df = pd.read_csv(io.StringIO(content), skiprows=parser.skiprows)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {exc}") from exc
-
-    parser = get_parser(bank)
 
     try:
         transaction_creates = parser.parse(df, account=account, owner=owner)
