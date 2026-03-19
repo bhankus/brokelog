@@ -7,11 +7,15 @@ from brokelog.models import TransactionCreate
 
 
 class BankParser(Protocol):
+    skiprows: int
+
     def parse(self, df: pd.DataFrame, account: str, owner: str) -> list[TransactionCreate]:
         ...
 
 
 class BaseParser:
+    skiprows: int = 0
+
     def _safe_float(self, val: Any) -> float:
         if pd.isna(val):
             raise ValueError(f"Cannot convert null/NaN to float: {val!r}")

@@ -86,8 +86,9 @@ String fields that cannot be determined from CSV data are stored as `"N/A"`.
 
 | Bank  | `bank` param | Notes                                               |
 |-------|--------------|-----------------------------------------------------|
-| Chase            | `chase` | Standard Chase CSV export (Transaction Date column)          |
-| American Express | `amex`  | Standard Amex CSV export (charges positive, payments negative; 2-digit year dates) |
+| Chase            | `chase`    | Standard Chase CSV export (Transaction Date column)          |
+| American Express | `amex`     | Standard Amex CSV export (charges positive, payments negative; 2-digit year dates) |
+| Barclays Bank Delaware | `barclays` | Standard Barclays CSV export (4-line metadata header; charges negative, payments positive) |
 
 ## Adding a New Bank Parser
 
