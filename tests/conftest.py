@@ -59,6 +59,19 @@ Description,Amount
 AUDIBLE,-14.95
 """
 
+CAPITAL_ONE_CSV_CONTENT = """\
+Account Number,Transaction Description,Transaction Date,Transaction Type,Transaction Amount,Balance
+4321,Electronic Payment to Gas & Electric,03/17/26,Debit,51.99,1234.56
+4321,Electronic Payment to American Express,03/02/26,Debit,127.20,1234.557
+4321,Withdrawal from T-MOBILE,03/02/26,Debit,187.76,1234.58
+4321,Monthly Interest Paid,02/28/26,Credit,1.23,1234.59
+"""
+
+CAPITAL_ONE_CSV_MISSING_COLUMN = """\
+Account Number,Transaction Description,Transaction Date,Balance
+4321,Some Transaction,03/17/26,1234.56
+"""
+
 # ---------------------------------------------------------------------------
 # Database fixtures
 # ---------------------------------------------------------------------------

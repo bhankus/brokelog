@@ -3,11 +3,13 @@ from fastapi import HTTPException
 from brokelog.parsers.amex import AmexParser
 from brokelog.parsers.barclays import BarclaysParser
 from brokelog.parsers.base import BankParser, BaseParser
+from brokelog.parsers.capital_one import CapitalOneParser
 from brokelog.parsers.chase import ChaseParser
 
 PARSER_REGISTRY: dict[str, type[BaseParser]] = {
     "amex": AmexParser,
     "barclays": BarclaysParser,
+    "capital_one": CapitalOneParser,
     "chase": ChaseParser,
 }
 
