@@ -9,6 +9,7 @@ from brokelog.parsers.amex import AmexParser
 from brokelog.parsers.barclays import BarclaysParser
 from brokelog.parsers.capital_one import CapitalOneParser
 from brokelog.parsers.chase import ChaseParser
+from brokelog.parsers.usaa import USAAParser
 from tests.conftest import (
     AMEX_CSV_CONTENT,
     AMEX_CSV_MISSING_COLUMN,
@@ -18,6 +19,8 @@ from tests.conftest import (
     CAPITAL_ONE_CSV_MISSING_COLUMN,
     CHASE_CSV_CONTENT,
     CHASE_CSV_MISSING_COLUMN,
+    USAA_CSV_CONTENT,
+    USAA_CSV_MISSING_COLUMN,
 )
 
 
@@ -103,6 +106,9 @@ class TestParserRegistry:
 
     def test_supported_banks_contains_capital_one(self):
         assert "capital_one" in SUPPORTED_BANKS
+
+    def test_supported_banks_contains_usaa(self):
+        assert "usaa" in SUPPORTED_BANKS
 
 
 class TestAmexParser:
@@ -266,3 +272,65 @@ class TestCapitalOneParser:
 
     def test_skiprows_attribute(self):
         assert CapitalOneParser.skiprows == 0
+
+
+class TestUSAAParser:
+    def test_parse_basic(self):
+        parser = USAAParser()
+        result = parser.parse(_df(USAA_CSV_CONTENT), account="USAA Checking", owner="alice")
+        assert len(result) == 3
+
+    def test_debit_maps_to_negative(self):
+        parser = USAAParser()
+        result = parser.parse(_df(USAA_CSV_CONTENT), account="USAA Checking", owner="alice")
+        debits = [t for t in result if t.type == "debit"]
+        assert len(debits) == 1
+        assert debits[0].amount < 0
+
+    def test_credits_map_to_positive(self):
+        parser = USAAParser()
+        result = parser.parse(_df(USAA_CSV_CONTENT), account="USAA Checking", owner="alice")
+        credits = [t for t in result if t.type == "credit"]
+        assert len(credits) == 2
+        assert all(t.amount > 0 for t in credits)
+
+    def test_amount_signs_match_type(self):
+        parser = USAAParser()
+        result = parser.parse(_df(USAA_CSV_CONTENT), account="USAA Checking", owner="alice")
+        for t in result:
+            if t.type == "debit":
+                assert t.amount < 0
+            else:
+                assert t.amount > 0
+
+    def test_description_concatenated(self):
+        parser = USAAParser()
+        result = parser.parse(_df(USAA_CSV_CONTENT), account="USAA Checking", owner="alice")
+        assert result[0].description == "ATM Withdrawal Name of bank"
+
+    def test_category_mapped(self):
+        parser = USAAParser()
+        result = parser.parse(_df(USAA_CSV_CONTENT), account="USAA Checking", owner="alice")
+        assert result[0].category == "Cash"
+        assert result[2].category == "Interest Income"
+
+    def test_account_and_owner_injected(self):
+        parser = USAAParser()
+        result = parser.parse(_df(USAA_CSV_CONTENT), account="My USAA", owner="bob")
+        assert all(t.account == "My USAA" for t in result)
+        assert all(t.owner == "bob" for t in result)
+
+    def test_missing_required_column_raises(self):
+        parser = USAAParser()
+        with pytest.raises(ValueError, match="missing required columns"):
+            parser.parse(_df(USAA_CSV_MISSING_COLUMN), account="x", owner="y")
+
+    def test_date_parsed_correctly(self):
+        from datetime import date
+
+        parser = USAAParser()
+        result = parser.parse(_df(USAA_CSV_CONTENT), account="x", owner="y")
+        assert result[0].transaction_date == date(2026, 3, 20)
+
+    def test_skiprows_attribute(self):
+        assert USAAParser.skiprows == 0

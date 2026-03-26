@@ -90,6 +90,7 @@ String fields that cannot be determined from CSV data are stored as `"N/A"`.
 | American Express | `amex`     | Standard Amex CSV export (charges positive, payments negative; 2-digit year dates) |
 | Barclays Bank Delaware | `barclays` | Standard Barclays CSV export (4-line metadata header; charges negative, payments positive) |
 | Capital One | `capital_one` | Standard Capital One CSV export (all amounts positive; Debit transactions negated) |
+| USAA | `usaa` | Standard USAA CSV export (amounts already signed; Description + Original Description concatenated) |
 
 ## Adding a New Bank Parser
 

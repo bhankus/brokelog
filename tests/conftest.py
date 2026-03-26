@@ -72,6 +72,18 @@ Account Number,Transaction Description,Transaction Date,Balance
 4321,Some Transaction,03/17/26,1234.56
 """
 
+USAA_CSV_CONTENT = """\
+Date,Description,Original Description,Category,Amount,Status
+2026-03-20,ATM Withdrawal,Name of bank,Cash,-101.00,Posted
+2026-03-20,ATM Fee Rebate,ATM REBATE,Atm Fee,1.00,Posted
+2026-03-12,Interest Paid,INTEREST PAID,Interest Income,0.47,Posted
+"""
+
+USAA_CSV_MISSING_COLUMN = """\
+Date,Description,Amount,Status
+2026-03-20,ATM Withdrawal,-101.00,Posted
+"""
+
 # ---------------------------------------------------------------------------
 # Database fixtures
 # ---------------------------------------------------------------------------
