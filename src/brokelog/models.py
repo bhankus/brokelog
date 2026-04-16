@@ -17,6 +17,9 @@ class Transaction(Base):
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=False)
     category: Mapped[str] = mapped_column(String, nullable=False)
+    user_category: Mapped[str] = mapped_column(
+        String, nullable=False, server_default="UNCATEGORIZED"
+    )
     type: Mapped[str] = mapped_column(String, nullable=False)
     account: Mapped[str] = mapped_column(String, nullable=False)
     owner: Mapped[str] = mapped_column(String, nullable=False)
@@ -30,6 +33,7 @@ class TransactionBase(BaseModel):
     amount: float
     description: str
     category: str
+    user_category: str = "UNCATEGORIZED"
     type: str
     account: str
     owner: str

@@ -4,6 +4,7 @@ import pandas as pd
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, UploadFile
 from sqlalchemy.orm import Session
 
+from brokelog.categorizer import categorize
 from brokelog.database import get_db
 from brokelog.models import Transaction, TransactionCreate, TransactionRead, UploadResult
 from brokelog.parsers import get_parser
@@ -17,6 +18,7 @@ async def _handle_csv_upload(
     account: str,
     owner: str,
     db: Session,
+    categories: dict[str, str],
 ) -> UploadResult:
     filename = file.filename or ""
     if not filename.lower().endswith(".csv"):
@@ -34,6 +36,9 @@ async def _handle_csv_upload(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    for t in transaction_creates:
+        t.user_category = categorize(t.description, categories)
+
     orm_objects = [Transaction(**t.model_dump()) for t in transaction_creates]
     db.add_all(orm_objects)
     db.commit()
@@ -46,13 +51,16 @@ async def _handle_csv_upload(
     )
 
 
-async def _handle_json_create(request: Request, db: Session) -> TransactionRead:
+async def _handle_json_create(
+    request: Request, db: Session, categories: dict[str, str]
+) -> TransactionRead:
     try:
         body = await request.json()
         transaction_create = TransactionCreate(**body)
     except Exception as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    transaction_create.user_category = categorize(transaction_create.description, categories)
     txn = Transaction(**transaction_create.model_dump())
     db.add(txn)
     db.commit()
@@ -72,16 +80,18 @@ async def create_transactions(
 ) -> UploadResult | TransactionRead:
     content_type = request.headers.get("content-type", "")
 
+    categories: dict[str, str] = request.app.state.categories
+
     if "multipart/form-data" in content_type:
         if file is None or bank is None or account is None or owner is None:
             raise HTTPException(
                 status_code=422,
                 detail="Multipart upload requires: file, bank, account, owner",
             )
-        return await _handle_csv_upload(file, bank, account, owner, db)
+        return await _handle_csv_upload(file, bank, account, owner, db, categories)
 
     # application/json path
-    return await _handle_json_create(request, db)
+    return await _handle_json_create(request, db, categories)
 
 
 @router.get("/", response_model=list[TransactionRead])
