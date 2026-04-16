@@ -43,6 +43,14 @@ class TestPostMultipart:
         )
         assert response.status_code == 400
 
+    def test_upload_sets_user_category(self, client):
+        # Upload Chase CSV and verify user_category is populated for known descriptions
+        upload = _csv_upload(client, CHASE_CSV_CONTENT)
+        txn_id = upload.json()["transaction_ids"][0]
+        txn = client.get(f"/api/v1/transactions/{txn_id}").json()
+        # First row is "AMAZON.COM" which should match "Amazon" → "Shopping"
+        assert txn["user_category"] == "Shopping"
+
     def test_upload_empty_csv(self, client):
         response = _csv_upload(client, CHASE_CSV_EMPTY)
         assert response.status_code == 201
@@ -62,6 +70,18 @@ class TestPostJson:
         assert body["description"] == "AMAZON.COM"
         assert body["type"] == "debit"
         assert "id" in body
+
+    def test_user_category_set_on_json_create(self, client):
+        # "AMAZON.COM" should fuzzy-match the "Amazon" key → "Shopping"
+        response = client.post("/api/v1/transactions/", json=VALID_JSON_TRANSACTION)
+        assert response.status_code == 201
+        assert response.json()["user_category"] == "Shopping"
+
+    def test_user_category_uncategorized_for_unknown_description(self, client):
+        payload = {**VALID_JSON_TRANSACTION, "description": "TOTALLY UNKNOWN MERCHANT XYZ"}
+        response = client.post("/api/v1/transactions/", json=payload)
+        assert response.status_code == 201
+        assert response.json()["user_category"] == "UNCATEGORIZED"
 
     def test_invalid_type_value(self, client):
         payload = {**VALID_JSON_TRANSACTION, "type": "transfer"}
